@@ -2,10 +2,9 @@ const AI_PLAYS_AS = 'b'
 
 let board,
   game = new Chess(),
-  worker =  new Worker('js/worker.js'),
+  worker =  new Worker('worker.js'),
   statusEl = $('#status'),
-  fenEl = $('#fen'),
-  pgnEl = $('#pgn');
+  fenEl = $('#fen')
 
 worker.addEventListener('message', event => {
   const bestMove = event.data
@@ -15,7 +14,7 @@ worker.addEventListener('message', event => {
 })
 
 const moveAI = () => {
-  console.log("moveAI")
+  console.log("Getting AI move...")
   worker.postMessage(game.fen());
 }
 
@@ -23,7 +22,6 @@ const moveAI = () => {
 // do not pick up pieces if the game is over
 // only pick up pieces for the side to move
 const onDragStart = function(source, piece, position, orientation) {
-  console.log("onDragStart")
   if (game.game_over() === true ||
       game.turn() === AI_PLAYS_AS){
     return false;
@@ -31,7 +29,6 @@ const onDragStart = function(source, piece, position, orientation) {
 };
 
 const onDrop = function(source, target) {
-  console.log("onDrop")
   // see if the move is legal
   const move = game.move({
     from: source,
@@ -54,27 +51,25 @@ const updateBoard = () => {
 // update the board position after the piece snap 
 // for castling, en passant, pawn promotion
 const onSnapEnd = function() {
-  console.log("onSnapEnd")
   updateBoard()
   moveAI();
 };
 
 const updateStatus = function() {
-  console.log("updateStatus")
-  var status = '';
+  let status = '';
 
-  var moveColor = 'White';
+  let moveColor = 'White';
   if (game.turn() === 'b') {
     moveColor = 'Black';
   }
 
   // checkmate?
-  if (game.in_checkmate() === true) {
+  if (game.in_checkmate()) {
     status = 'Game over, ' + moveColor + ' is in checkmate.';
   }
 
   // draw?
-  else if (game.in_draw() === true) {
+  else if (game.in_draw()) {
     status = 'Game over, drawn position';
   }
 
@@ -83,14 +78,13 @@ const updateStatus = function() {
     status = moveColor + ' to move';
 
     // check?
-    if (game.in_check() === true) {
+    if (game.in_check()) {
       status += ', ' + moveColor + ' is in check';
     }
   }
 
   statusEl.html(status);
   fenEl.html(game.fen());
-  pgnEl.html(game.pgn());
 };
 
 const cfg = {
