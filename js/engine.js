@@ -1,40 +1,66 @@
-var board,
+const AI_PLAYS_AS = 'b'
+
+let board,
   game = new Chess(),
+  worker =  new Worker('js/worker.js'),
   statusEl = $('#status'),
   fenEl = $('#fen'),
   pgnEl = $('#pgn');
 
+worker.addEventListener('message', event => {
+  const bestMove = event.data
+  game.move(bestMove);
+  updateBoard()
+  updateStatus();
+})
+
+const moveAI = () => {
+  console.log("moveAI")
+  worker.postMessage(game.fen());
+}
+
+
 // do not pick up pieces if the game is over
 // only pick up pieces for the side to move
-var onDragStart = function(source, piece, position, orientation) {
+const onDragStart = function(source, piece, position, orientation) {
+  console.log("onDragStart")
   if (game.game_over() === true ||
-      (game.turn() === 'w' && piece.search(/^b/) !== -1) ||
-      (game.turn() === 'b' && piece.search(/^w/) !== -1)) {
+      game.turn() === AI_PLAYS_AS){
     return false;
   }
 };
 
-var onDrop = function(source, target) {
+const onDrop = function(source, target) {
+  console.log("onDrop")
   // see if the move is legal
-  var move = game.move({
+  const move = game.move({
     from: source,
     to: target,
-    promotion: 'q' // NOTE: always promote to a queen for example simplicity
+    promotion: 'q' // NOTE: always promote to a queen
   });
 
   // illegal move
-  if (move === null) return 'snapback';
-
+  if (move === null){
+    console.log("Illegal move")
+    return 'snapback';
+  } 
   updateStatus();
 };
 
+const updateBoard = () => {
+  board.position(game.fen());
+}
+
 // update the board position after the piece snap 
 // for castling, en passant, pawn promotion
-var onSnapEnd = function() {
-  board.position(game.fen());
+const onSnapEnd = function() {
+  console.log("onSnapEnd")
+  updateBoard()
+  moveAI();
 };
 
-var updateStatus = function() {
+const updateStatus = function() {
+  console.log("updateStatus")
   var status = '';
 
   var moveColor = 'White';
@@ -67,7 +93,7 @@ var updateStatus = function() {
   pgnEl.html(game.pgn());
 };
 
-var cfg = {
+const cfg = {
   draggable: true,
   position: 'start',
   onDragStart: onDragStart,
